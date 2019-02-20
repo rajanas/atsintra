@@ -1,0 +1,11 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "isCreatingSolution": true,
+    "environment": "spo",
+    "version": "1.7.1",
+    "libraryName": "intranet-connect",
+    "libraryId": "dbfec5dd-076e-4b1c-929d-33a432275de5",
+    "packageManager": "npm",
+    "componentType": "webpart"
+  }
+}

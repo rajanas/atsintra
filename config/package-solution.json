@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "intranet-connect-client-side-solution",
+    "id": "dbfec5dd-076e-4b1c-929d-33a432275de5",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true
+  },
+  "paths": {
+    "zippedPackage": "solution/intranet-connect.sppkg"
+  }
+}
