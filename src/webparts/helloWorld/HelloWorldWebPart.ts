@@ -1,21 +1,37 @@
-import * as React from 'react';
-import * as ReactDom from 'react-dom';
-import { Version } from '@microsoft/sp-core-library';
+import * as React from "react";
+import * as ReactDom from "react-dom";
+import { Version } from "@microsoft/sp-core-library";
 import {
   BaseClientSideWebPart,
   IPropertyPaneConfiguration,
-  PropertyPaneTextField, PropertyPaneCheckbox, PropertyPaneLabel, PropertyPaneLink,
-  PropertyPaneSlider, PropertyPaneToggle, PropertyPaneDropdown, IPropertyPaneDropdownOption
-} from '@microsoft/sp-webpart-base';
+  PropertyPaneTextField,
+  PropertyPaneCheckbox,
+  PropertyPaneLabel,
+  PropertyPaneLink,
+  PropertyPaneSlider,
+  PropertyPaneToggle,
+  PropertyPaneDropdown,
+  IPropertyPaneDropdownOption,
+  WebPartContext
+} from "@microsoft/sp-webpart-base";
+import { JSONParser } from "@pnp/odata";
 
-import * as strings from 'HelloWorldWebPartStrings';
-import HelloWorld from './components/HelloWorld';
-import { IHelloWorldProps } from './components/IHelloWorldProps';
+import * as strings from "HelloWorldWebPartStrings";
+import HelloWorld from "./components/HelloWorld";
+import { IHelloWorldProps } from "./components/IHelloWorldProps";
 
-import { PropertyFieldCodeEditor, PropertyFieldCodeEditorLanguages } from '@pnp/spfx-property-controls/lib/PropertyFieldCodeEditor';
-import { PropertyFieldListPicker, PropertyFieldListPickerOrderBy } from '@pnp/spfx-property-controls/lib/PropertyFieldListPicker';
-import { PropertyFieldMultiSelect } from '@pnp/spfx-property-controls/lib/PropertyFieldMultiSelect';
+import {
+  PropertyFieldCodeEditor,
+  PropertyFieldCodeEditorLanguages
+} from "@pnp/spfx-property-controls/lib/PropertyFieldCodeEditor";
+import {
+  PropertyFieldListPicker,
+  PropertyFieldListPickerOrderBy
+} from "@pnp/spfx-property-controls/lib/PropertyFieldListPicker";
+import { PropertyFieldMultiSelect } from "@pnp/spfx-property-controls/lib/PropertyFieldMultiSelect";
 import { sp } from "@pnp/sp";
+import { IDropdownOption } from "office-ui-fabric-react/lib/Dropdown";
+import { isEmpty } from "@microsoft/sp-lodash-subset";
 export interface IHelloWorldWebPartProps {
   description: string;
   itemTemplate: string;
@@ -23,8 +39,11 @@ export interface IHelloWorldWebPartProps {
   selectedFields: number[] | string[];
 }
 
-export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorldWebPartProps> {
-  private lstfetched: boolean = false;
+export default class HelloWorldWebPart extends BaseClientSideWebPart<
+  IHelloWorldWebPartProps
+> {
+  private isListFetched: boolean = false;
+  private areFieldsLoads: boolean = false;
   private listFieldOptions: Array<IPropertyPaneDropdownOption> = new Array<IPropertyPaneDropdownOption>();
 
   public onInit(): Promise<void> {
@@ -41,7 +60,9 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
       HelloWorld,
       {
         description: this.properties.description,
-        itemTemplate: this.properties.itemTemplate
+        itemTemplate: this.properties.itemTemplate,
+        selectedList: this.properties.selectedList,
+        selectedFields: this.properties.selectedFields
       }
     );
 
@@ -53,28 +74,16 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
   }
 
   protected get dataVersion(): Version {
-    return Version.parse('1.0');
+    return Version.parse("1.0");
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
-    if (this.lstfetched) {
-
-      sp.web.lists.getById(this.properties.selectedList).fields.filter("Group ne '_Hidden' and Hidden eq false").get().then(fields => {
-        this.listFieldOptions = [];
-        fields.map(lst => {
-          this.listFieldOptions.push({ key: lst.Id, text: lst.Title });
-        });
-        console.log(this.listFieldOptions); console.log(fields);
-        this.context.propertyPane.refresh();
-        this.lstfetched = false;
-      }
-      ).catch(error => {
-        console.log(error);
-        this.listFieldOptions = [];
-
-      }
-      );
-    }
+    this.LoadProperties(
+      this.isListFetched,
+      this.properties.selectedList,
+      this.context,
+      this.listFieldOptions
+    );
 
     return {
       pages: [
@@ -86,41 +95,52 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
             {
               groupName: strings.BasicGroupName,
               groupFields: [
-                PropertyPaneTextField('description', {
+                PropertyPaneTextField("description", {
                   label: strings.DescriptionFieldLabel
                 }),
-                PropertyFieldListPicker('list', {
-                  label: 'Select a list',
+                PropertyFieldListPicker("list", {
+                  label: "Select a list",
                   selectedList: this.properties.selectedList,
                   includeHidden: false,
                   orderBy: PropertyFieldListPickerOrderBy.Title,
                   disabled: false,
-                  onPropertyChange: (propertyPath: string, oldValue: any, newValue: any) => {
-                    this.properties.selectedList = newValue;
-                    console.log(this.properties.selectedList);
-                    this.lstfetched = true;
-                    this.context.propertyPane.refresh();
+                  onPropertyChange: (
+                    propertyPath: string,
+                    oldValue: any,
+                    newValue: any
+                  ) => {
+                    if (newValue==="") {
+                      console.log(newValue);
+                      this.properties.selectedFields=null;
+                    }else{
+                      this.properties.selectedList = newValue;
+                      console.log(this.properties.selectedList);
+                      this.isListFetched = true;
+                      this.context.propertyPane.refresh();
+                    }
+                     
+                    
                   },
                   properties: this.properties,
                   context: this.context,
                   onGetErrorMessage: null,
                   deferredValidationTime: 0,
-                  key: 'listPickerFieldId'
+                  key: "listPickerFieldId"
                 }),
-                PropertyFieldMultiSelect('listFields', {
-                  key: 'multiSelect',
+                PropertyFieldMultiSelect("selectedFields", {
+                  key: "selectedFieldsKey",
                   label: "Select Fields",
                   options: this.listFieldOptions,
                   selectedKeys: this.properties.selectedFields
                 }),
-                PropertyFieldCodeEditor('itemTemplate', {
-                  label: 'Edit HTML Code',
-                  panelTitle: 'Edit HTML Code',
+                PropertyFieldCodeEditor("itemTemplate", {
+                  label: "Edit HTML Code",
+                  panelTitle: "Edit HTML Code",
                   initialValue: this.properties.itemTemplate,
                   onPropertyChange: this.onPropertyPaneFieldChanged,
                   properties: this.properties,
                   disabled: false,
-                  key: 'codeEditorFieldId',
+                  key: "codeEditorFieldId",
                   language: PropertyFieldCodeEditorLanguages.HTML
                 })
               ]
@@ -129,5 +149,39 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
         }
       ]
     };
+  }
+
+  private setFieldOptions(selectedList: string) {
+    sp.web.lists
+      .getById(selectedList)
+      .fields.filter("Group ne '_Hidden' and Hidden eq false")
+      .get()
+      .then(fields => {
+        console.log(fields);
+        this.listFieldOptions = [];
+        fields.map(lst => {
+          this.listFieldOptions.push({ key: lst.Id, text: lst.Title });
+        });
+        this.context.propertyPane.refresh();
+        this.isListFetched = false;
+      })
+      .catch(error => {
+        console.log(error);
+        this.listFieldOptions = [];
+      });
+  }
+
+  private LoadProperties(isListFetched: boolean, selectedList: string,context: WebPartContext,listFieldOptions: IDropdownOption[] ) {
+   // this.listFieldOptions = [];
+   if (isListFetched) 
+    {
+      this.setFieldOptions(this.properties.selectedList);
+    }
+
+    if(this.properties.selectedList){
+      this.setFieldOptions(this.properties.selectedList);
+
+    }
+
   }
 }

@@ -23,7 +23,7 @@
       "description": "HelloWorld",
       "itemTemplate":"",
       "list":"",
-      "listFields":""
+      "selectedFields":""
 
     }
   }]
