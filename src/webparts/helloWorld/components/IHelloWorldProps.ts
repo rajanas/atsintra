@@ -1,6 +1,6 @@
 export interface IHelloWorldProps {
-  description: string; 
+  description: string;
   itemTemplate:string;
   selectedList: string;
-  selectedFields: number[] | string[];
+  selectedFields:  string[];
 }

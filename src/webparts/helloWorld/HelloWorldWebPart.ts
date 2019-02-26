@@ -11,6 +11,7 @@ import {
   PropertyPaneSlider,
   PropertyPaneToggle,
   PropertyPaneDropdown,
+  PropertyPaneButton,PropertyPaneButtonType,
   IPropertyPaneDropdownOption,
   WebPartContext
 } from "@microsoft/sp-webpart-base";
@@ -78,13 +79,10 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
-    this.LoadProperties(
-      this.isListFetched,
-      this.properties.selectedList,
-      this.context,
-      this.listFieldOptions
-    );
+   if (!this.isListFetched) {
+   this.setFieldOptions(this.properties.selectedList);
 
+   }
     return {
       pages: [
         {
@@ -115,11 +113,11 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<
                     }else{
                       this.properties.selectedList = newValue;
                       console.log(this.properties.selectedList);
-                      this.isListFetched = true;
+                      this.isListFetched = false;
                       this.context.propertyPane.refresh();
                     }
-                     
-                    
+
+
                   },
                   properties: this.properties,
                   context: this.context,
@@ -128,7 +126,7 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<
                   key: "listPickerFieldId"
                 }),
                 PropertyFieldMultiSelect("selectedFields", {
-                  key: "selectedFieldsKey",
+                  key: "selectedFields",
                   label: "Select Fields",
                   options: this.listFieldOptions,
                   selectedKeys: this.properties.selectedFields
@@ -142,7 +140,12 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<
                   disabled: false,
                   key: "codeEditorFieldId",
                   language: PropertyFieldCodeEditorLanguages.HTML
-                })
+                }),
+                PropertyPaneButton('', {
+                  text: "Normal button",
+                  buttonType: PropertyPaneButtonType.Normal,
+                  onClick: ()=>{this.render();}
+                 })
               ]
             }
           ]
@@ -152,6 +155,7 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<
   }
 
   private setFieldOptions(selectedList: string) {
+   // this.properties.selectedFields=[];
     sp.web.lists
       .getById(selectedList)
       .fields.filter("Group ne '_Hidden' and Hidden eq false")
@@ -160,10 +164,11 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<
         console.log(fields);
         this.listFieldOptions = [];
         fields.map(lst => {
-          this.listFieldOptions.push({ key: lst.Id, text: lst.Title });
+          this.listFieldOptions.push({ key: lst.InternalName, text: `${lst.Title} (${lst.InternalName})` });
         });
+      }).then(()=>{
         this.context.propertyPane.refresh();
-        this.isListFetched = false;
+        this.isListFetched = true;
       })
       .catch(error => {
         console.log(error);
@@ -171,17 +176,4 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<
       });
   }
 
-  private LoadProperties(isListFetched: boolean, selectedList: string,context: WebPartContext,listFieldOptions: IDropdownOption[] ) {
-   // this.listFieldOptions = [];
-   if (isListFetched) 
-    {
-      this.setFieldOptions(this.properties.selectedList);
-    }
-
-    if(this.properties.selectedList){
-      this.setFieldOptions(this.properties.selectedList);
-
-    }
-
-  }
 }
