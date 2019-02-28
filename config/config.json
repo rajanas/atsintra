@@ -9,11 +9,20 @@
           "manifest": "./src/webparts/helloWorld/HelloWorldWebPart.manifest.json"
         }
       ]
+    },
+    "contacts-list-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/contactsList/ContactsListWebPart.js",
+          "manifest": "./src/webparts/contactsList/ContactsListWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
     "HelloWorldWebPartStrings": "lib/webparts/helloWorld/loc/{locale}.js",
-    "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js"
+    "PropertyControlStrings": "node_modules/@pnp/spfx-property-controls/lib/loc/{locale}.js",
+    "ContactsListWebPartStrings": "lib/webparts/contactsList/loc/{locale}.js"
   }
 }

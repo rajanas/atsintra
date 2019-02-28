@@ -35,7 +35,8 @@ export default class HelloWorld extends React.Component<IHelloWorldProps, any> {
   public render(): React.ReactElement<IHelloWorldProps> {
 
     let items=this.state.items.map(item => {
-      this.props.selectedFields.map(field => {
+      return (
+        this.props.selectedFields.map(field => {
         console.log('field:'+ item[field]);
         return (
           <div>
@@ -45,7 +46,7 @@ export default class HelloWorld extends React.Component<IHelloWorldProps, any> {
 
           </div>
         );
-      });
+      }));
     });
     return (
       <div className={styles.helloWorld}>
